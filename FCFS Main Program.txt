@@ -1,0 +1,317 @@
+#include "stdafx.h"
+#include "process_class.cpp"
+#include "iostream"
+#include "string"
+
+using namespace std;
+
+void print_array(Process * process, int number)
+{
+	int i = 0;
+	
+	cout << "Process " << number << ": {";
+	
+	while (i < process->length)
+	{
+		if (process != NULL)
+		{
+			cout << process->array[i];
+			cout << ", ";
+			i++;
+		}
+	}
+	cout << "}\n";
+}
+void print_queue(Queue * queue, string queue_name)
+{
+	int s = 0;
+	Process * process;
+
+	if (queue->front != NULL)
+	{
+		process = queue->front;
+		cout << "Printing " << queue_name << ":\n";
+
+		while (s < queue->size)	//process pointer = NULL after P2 is printed - moved P2 into both queues?
+		{
+			print_array(process, process->process_number);
+			process = process->next;
+			s++;
+		}
+	}
+	else
+	{
+		cout << queue_name << " is empty.\n";
+	}
+	cout << endl;
+}
+int main()
+{
+	double current_time = 0;					//universal time for the simulation loop
+	double CPU_time = 0;
+	double average_turnaround_time = 0;
+	double average_waiting_time = 0;
+	double average_response_time = 0;
+	Process * temp_pointer;
+
+	Queue * FCFS_queue = new Queue();		//setup
+	Queue * IO_queue = new Queue();
+	Process * P1 = new Process(15);			
+	Process * P2 = new Process(17);
+	Process * P3 = new Process(17);
+	Process * P4 = new Process(17);
+	Process * P5 = new Process(19);
+	Process * P6 = new Process(17);
+	Process * P7 = new Process(15);
+	Process * P8 = new Process(11);
+	
+	P1->set_process_number(1);
+	P1->add_value(5, 0);
+	P1->add_value(27, 1);
+	P1->add_value(3, 2);
+	P1->add_value(31, 3);
+	P1->add_value(5, 4);
+	P1->add_value(43, 5);
+	P1->add_value(4, 6);
+	P1->add_value(18, 7);
+	P1->add_value(6, 8);
+	P1->add_value(22, 9);
+	P1->add_value(4, 10);
+	P1->add_value(26, 11);
+	P1->add_value(3, 12);
+	P1->add_value(24, 13);
+	P1->add_value(4, 14);
+
+	P2->set_process_number(2);
+	P2->add_value(4, 0);
+	P2->add_value(48, 1);
+	P2->add_value(5, 2);
+	P2->add_value(44, 3);
+	P2->add_value(7, 4);
+	P2->add_value(42, 5);
+	P2->add_value(12, 6);
+	P2->add_value(37, 7);
+	P2->add_value(9, 8);
+	P2->add_value(76, 9);
+	P2->add_value(4, 10);
+	P2->add_value(41, 11);
+	P2->add_value(9, 12);
+	P2->add_value(31, 13);
+	P2->add_value(7, 14);
+	P2->add_value(43, 15);
+	P2->add_value(8, 16);
+
+	P3->set_process_number(3);
+	P3->add_value(8, 0);
+	P3->add_value(33, 1);
+	P3->add_value(12, 2);
+	P3->add_value(41, 3);
+	P3->add_value(18, 4);
+	P3->add_value(65, 5);
+	P3->add_value(14, 6);
+	P3->add_value(21, 7);
+	P3->add_value(4, 8);
+	P3->add_value(61, 9);
+	P3->add_value(15, 10);
+	P3->add_value(18, 11);
+	P3->add_value(14, 12);
+	P3->add_value(26, 13);
+	P3->add_value(5, 14);
+	P3->add_value(31, 15);
+	P3->add_value(6, 16);
+
+	P4->set_process_number(4);
+	P4->add_value(3, 0);
+	P4->add_value(35, 1);
+	P4->add_value(4, 2);
+	P4->add_value(41, 3);
+	P4->add_value(5, 4);
+	P4->add_value(45, 5);
+	P4->add_value(3, 6);
+	P4->add_value(51, 7);
+	P4->add_value(4, 8);
+	P4->add_value(61, 9);
+	P4->add_value(5, 10);
+	P4->add_value(54, 11);
+	P4->add_value(6, 12);
+	P4->add_value(82, 13);
+	P4->add_value(5, 14);
+	P4->add_value(77, 15);
+	P4->add_value(3, 16);
+
+	P5->set_process_number(5);
+	P5->add_value(16, 0);
+	P5->add_value(24, 1);
+	P5->add_value(17, 2);
+	P5->add_value(21, 3);
+	P5->add_value(5, 4);
+	P5->add_value(36, 5);
+	P5->add_value(16, 6);
+	P5->add_value(26, 7);
+	P5->add_value(7, 8);
+	P5->add_value(31, 9);
+	P5->add_value(13, 10);
+	P5->add_value(28, 11);
+	P5->add_value(11, 12);
+	P5->add_value(21, 13);
+	P5->add_value(6, 14);
+	P5->add_value(13, 15);
+	P5->add_value(3, 16);
+	P5->add_value(11, 17);
+	P5->add_value(4, 18);
+
+	P6->set_process_number(6);
+	P6->add_value(11, 0);
+	P6->add_value(22, 1);
+	P6->add_value(4, 2);
+	P6->add_value(8, 3);
+	P6->add_value(5, 4);
+	P6->add_value(10, 5);
+	P6->add_value(6, 6);
+	P6->add_value(12, 7);
+	P6->add_value(7, 8);
+	P6->add_value(14, 9);
+	P6->add_value(9, 10);
+	P6->add_value(18, 11);
+	P6->add_value(12, 12);
+	P6->add_value(24, 13);
+	P6->add_value(15, 14);
+	P6->add_value(30, 15);
+	P6->add_value(8, 16);
+
+	P7->set_process_number(7);
+	P7->add_value(14, 0);
+	P7->add_value(46, 1);
+	P7->add_value(17, 2);
+	P7->add_value(41, 3);
+	P7->add_value(11, 4);
+	P7->add_value(42, 5);
+	P7->add_value(15, 6);
+	P7->add_value(21, 7);
+	P7->add_value(4, 8);
+	P7->add_value(32, 9);
+	P7->add_value(7, 10);
+	P7->add_value(19, 11);
+	P7->add_value(16, 12);
+	P7->add_value(33, 13);
+	P7->add_value(10, 14);
+
+	P8->set_process_number(8);
+	P8->add_value(4, 0);
+	P8->add_value(14, 1);
+	P8->add_value(5, 2);
+	P8->add_value(33, 3);
+	P8->add_value(6, 4);
+	P8->add_value(51, 5);
+	P8->add_value(14, 6);
+	P8->add_value(73, 7);
+	P8->add_value(16, 8);
+	P8->add_value(87, 9);
+	P8->add_value(6, 10);
+
+	/*print_array(P1, 1);			//Print to validate data before analyzing
+	print_array(P2, 2);
+	print_array(P3, 3);
+	print_array(P4, 4);
+	print_array(P5, 5);
+	print_array(P6, 6);
+	print_array(P7, 7);
+	print_array(P8, 8);	*/	
+
+	FCFS_queue->push_back(P1);	//push all processes to the FCFS queue
+	FCFS_queue->push_back(P2);
+	FCFS_queue->push_back(P3);
+	FCFS_queue->push_back(P4);
+	FCFS_queue->push_back(P5);		
+	FCFS_queue->push_back(P6);
+	FCFS_queue->push_back(P7);
+	FCFS_queue->push_back(P8);
+	
+	cout << endl;
+	cout << "Displaying initial queue states... \n\n";
+	print_queue(FCFS_queue, "FCFS");
+	print_queue(IO_queue, "IO");
+
+	while (FCFS_queue->size > 0 || IO_queue->size > 0)	
+	{
+		IO_queue->check_for_zeroes_in_IO_queue(IO_queue, FCFS_queue);
+		
+		FCFS_queue->check_for_complete_processes_in_FCFS_queue(IO_queue, FCFS_queue, current_time);
+		FCFS_queue->check_for_zeroes_in_FCFS_queue(IO_queue, FCFS_queue);
+		
+		IO_queue->decrement_all(IO_queue);
+		FCFS_queue->decrement_front(FCFS_queue);
+
+		if (FCFS_queue->size != 0)	//If the FCFS queue is active
+		{
+			temp_pointer = FCFS_queue->front->next;	//put the temporary pointer on the second item in the FCFS queue (waiting processes)
+			while (temp_pointer != NULL)
+			{
+				temp_pointer->waiting_time++;		//increment the waiting processes' waiting time
+				temp_pointer = temp_pointer->next;	//move to the next waiting process
+			}
+
+			temp_pointer = FCFS_queue->front;		//put the temporary pointer at the front of the FCFS queue (running process)
+			if (temp_pointer->response_time == 0)	//if the process hasn't begun running yet
+			{
+				temp_pointer->response_time = current_time;	//set the response time to the simulation's current time
+			}
+			CPU_time++;			//increment the CPU time if the CPU is currently active
+		}
+		current_time++;		
+	}
+	
+	current_time--;		//undo the last current_time increment so current_time accurately reflects when the simulation finishes
+	P1->response_time = 0;	//Manually set P1's response_time to 0 because the above loop works for every process but P1, whose response time will always be 0
+	
+	//Output data once the simulation is finished running
+	cout << "\nEnd of simulation.\n\n";
+	cout << "Displaying final queue states...\n\n";
+	print_queue(FCFS_queue, "FCFS");
+	print_queue(IO_queue, "IO");
+	cout << "The current time is: " << current_time << endl;
+
+	cout << "Process 1 turnaround time: " << P1->turnaround_time << endl;	
+	cout << "Process 1 waiting time: " << P1->waiting_time << endl;
+	cout << "Process 1 response time: " << P1->response_time << endl << endl;
+
+	cout << "Process 2 turnaround time: " << P2->turnaround_time << endl;
+	cout << "Process 2 waiting time: " << P2->waiting_time << endl;
+	cout << "Process 2 response time: " << P2->response_time << endl << endl;
+
+	cout << "Process 3 turnaround time: " << P3->turnaround_time << endl;
+	cout << "Process 3 waiting time: " << P3->waiting_time << endl;
+	cout << "Process 3 response time: " << P3->response_time << endl << endl;
+
+	cout << "Process 4 turnaround time: " << P4->turnaround_time << endl;
+	cout << "Process 4 waiting time: " << P4->waiting_time << endl;
+	cout << "Process 4 response time: " << P4->response_time << endl << endl;
+
+	cout << "Process 5 turnaround time: " << P5->turnaround_time << endl;
+	cout << "Process 5 waiting time: " << P5->waiting_time << endl;
+	cout << "Process 5 response time: " << P5->response_time << endl << endl;
+
+	cout << "Process 6 turnaround time: " << P6->turnaround_time << endl;
+	cout << "Process 6 waiting time: " << P6->waiting_time << endl;
+	cout << "Process 6 response time: " << P6->response_time << endl << endl;
+
+	cout << "Process 7 turnaround time: " << P7->turnaround_time << endl;
+	cout << "Process 7 waiting time: " << P7->waiting_time << endl;
+	cout << "Process 7 response time: " << P7->response_time << endl << endl;
+
+	cout << "Process 8 turnaround time: " << P8->turnaround_time << endl;
+	cout << "Process 8 waiting time: " << P8->waiting_time << endl;
+	cout << "Process 8 response time: " << P8->response_time << endl << endl;
+
+	CPU_time = (CPU_time/current_time) * 100;
+	average_turnaround_time = (P1->turnaround_time + P2->turnaround_time + P3->turnaround_time + P4->turnaround_time + P5->turnaround_time + P6->turnaround_time + P7->turnaround_time + P8->turnaround_time) / 8;
+	average_waiting_time = (P1->waiting_time + P2->waiting_time + P3->waiting_time + P4->waiting_time + P5->waiting_time + P6->waiting_time + P7->waiting_time + P8->waiting_time) / 8;
+	average_response_time = (P1->response_time + P2->response_time + P3->response_time + P4->response_time + P5->response_time + P6->response_time + P7->response_time + P8->response_time) / 8;
+
+	cout << "CPU utilization for FCFS: " << CPU_time << "%" << endl;
+	cout << "Average turnaround time: " << average_turnaround_time << endl;
+	cout << "Average waiting time: " << average_waiting_time << endl;
+	cout << "Average response time: " << average_response_time << endl;
+	
+	return 0;
+}

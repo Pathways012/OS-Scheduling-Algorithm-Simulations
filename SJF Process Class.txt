@@ -1,0 +1,294 @@
+//#include "stdafx.h"
+#include "iostream"
+
+class Process
+{
+public:
+	int process_number;
+	int activation_time = 0;					//assume all processes enter at time 0
+	double waiting_time;
+	double turnaround_time;
+	double response_time;
+	double time_in_CPU = 0;
+	bool running_flag = false;
+	int * array;
+	int * current_index;
+	int current_value;
+	int length;
+	Process * next = NULL;
+	Process * previous = NULL;
+
+	void set_process_number(int number)
+	{
+		process_number = number;
+	}
+	Process(int array_size)						//construct the process with appropriate array size
+	{
+		length = array_size;					//Make a note of how long the array is before creating the array for use in main
+		array = new int[array_size];
+		current_index = array;
+	}
+	Process()
+	{
+
+	}
+	void add_value(int new_value, int index)	//add an item to the array 
+	{
+		array[index] = new_value;
+	}
+};
+
+class Queue		//A doubly linked list
+{
+public:
+	int size;
+	Process *front;
+	Process *back;
+
+	Queue()
+	{
+		size = 0;
+		front = NULL;
+		back = NULL;
+	}
+
+	void push_back(Process * a)	//add a process to the back of the queue
+	{
+		if (front == NULL)
+		{
+			front = a;
+			back = a;
+			a->previous = NULL;
+			a->next = NULL;
+		}
+		else
+		{
+			a->previous = back;
+			back->next = a;
+			back = a;
+			a->next = NULL;
+		}
+		size++;
+	}
+
+	void push_front(Process * a)	//add a process to the front of the queue
+	{
+		//add a specific scenario for if there are only 2 items in the queue
+		a->previous = NULL;
+		a->next = front;
+		front = a;
+
+		if (back == NULL)
+		{
+			back = a;
+		}
+		size++;
+	}
+
+	
+	void swap(Process * front, Process * back)	
+	{
+		/*b->next = a;
+		b->previous = NULL;
+		a->next = NULL;
+		a->previous = b;*/
+
+		/*Process * temp_1 = front->previous;
+		Process * temp_2 = back->next;
+		temp_1->next = back;	//temp_1 is NULL (which it should be)
+		temp_2->previous = front;
+		back->previous = temp_1;
+		front->next = temp_2;
+		back->next = front;
+		front->previous = back;*/
+
+		back->next = front;
+		front->previous = back;
+		back->previous = NULL;
+		front->next = NULL;
+	}
+	
+
+	void print_queue()		//print the length of each item in the queue - used for validation and troubleshooting 
+	{
+		Process * p = front;
+		while (p != NULL)
+		{
+			std::cout << p->length << " ";	//print the length of each process' array so you can differentiate between them
+			p = p->next;
+		}
+		if (p == NULL)
+		{
+			std::cout << '\n';
+			return;
+		}
+	}
+
+	void decrement_front(Queue * queue)
+	{
+		if (queue->front != NULL)
+		{
+			queue->front->array[0] = queue->front->array[0] - 1;
+		}
+	}
+	void decrement_all(Queue * queue)
+	{
+		Process * process;
+		process = queue->front;
+
+		if (queue->front != NULL)
+		{
+			while (process != NULL)
+			{
+				process->array[0] = process->array[0] - 1;
+				process = process->next;
+			}
+		}
+	}
+	void check_for_zeroes_in_IO_queue(Queue * io_queue, Queue * sjf_queue)
+	{
+		Process * process;
+		process = io_queue->front;
+		int i = io_queue->size;
+
+		for (int x = 0; x < i; x++)	//iterate through the IO queue
+		{
+			if (process != NULL && process->array[0] == 0)	//if the lead element in the array is zero 
+			{
+				int i = process->length;;
+				for (int x = 0; x < i; x++)
+				{
+					process->array[x] = process->array[x + 1];	//shift the array to the left to get rid of the zero
+				}
+
+				process->length = process->length - 1;			//shorten the array by one to get rid of the new zero at the end
+				io_queue->pop_specific_process(io_queue, process);
+				process->running_flag = false;				//set the running_flag to false to avoid preemption in SJF queue
+
+				if (process != NULL && sjf_queue->size == 0)		//if the fcfs queue is empty, push the process to the front
+				{
+					sjf_queue->push_front(process);
+				}
+				else if (process != NULL && sjf_queue->size > 0)	//if the fcfs queue is occupied, push the process to the back
+				{
+					sjf_queue->push_back(process);
+				}
+			}
+			if (process != NULL)
+			{
+				process = process->next;
+			}
+			if (process == NULL)		//if the process was at the front of IO, move the process pointer to the new front of the queue. The counter will catch an extra NULL at the end.
+			{
+				process = front;
+			}
+		}
+	}
+
+	void check_for_zeroes_in_SJF_queue(Queue * io_queue, Queue * sjf_queue)
+	{
+		Process * process;
+		process = sjf_queue->front;
+
+		if (process != NULL)
+		{
+			if (process->array[0] == 0)	//if the lead element in the array is zero
+			{
+				int i = process->length;
+				for (int x = 0; x < i; x++)
+				{
+					process->array[x] = process->array[x + 1];	//shift the array to the left to get rid of the zero
+				}
+
+				process->length = process->length - 1;			//shorten the array by one to get rid of the new zero at the end
+				sjf_queue->pop_specific_process(sjf_queue, process);		//remove the process from the FCFS queue
+				io_queue->push_back(process);					//push the process back to the IO queue
+			}
+		}
+	}
+
+	int check_for_complete_processes_in_SJF_queue(Queue * io_queue, Queue * sjf_queue, double current_time)
+	{
+		Process * process;
+		process = sjf_queue->front;
+
+		if (process == NULL)	//if the queue is empty
+		{
+			return 0;
+		}
+		if (process != NULL && process->length == 1 && process->array[0] == 0)	//if the process at the front of the queue is finished
+		{
+			process->turnaround_time = current_time;
+			sjf_queue->pop_specific_process(sjf_queue, process);
+			process->running_flag = false;				//set the running_flag to false to avoid preemption in SJF queue
+			return current_time;
+		}
+		return 0;
+	}
+
+	void sort_SJF_queue(Queue * sjf_queue)	//find the shortest job in the SJF queue and put it at the front
+	{
+		Process * process;
+		Process * shortest;
+		int job_runtime;
+
+		process = sjf_queue->front;
+		shortest = process;
+		job_runtime = process->array[0];	//initialize job_runtime with the front of the queue's runtime
+
+		while (process != NULL)
+		{
+			if (process->array[0] < job_runtime)
+			{
+				job_runtime = process->array[0];
+				shortest = process;
+			}
+			process = process->next;
+		}
+		sjf_queue->pop_specific_process(sjf_queue, shortest);
+		//sjf_queue->push_front(shortest); //beginning of edit
+		if (sjf_queue->size == 1)
+		{
+			sjf_queue->push_front(shortest);
+			sjf_queue->back->previous = sjf_queue->front;	//fix the back's previous pointer being null
+		}
+		else
+		{
+			sjf_queue->push_front(shortest);
+		}
+		
+		//end of edit
+	}
+
+	Process * pop_front() //pop a process from the front of the queue
+	{
+		if (front == back)
+		{
+			back = NULL;
+		}
+		front = front->next;
+		size--;
+		return front;
+	}
+
+	void pop_specific_process(Queue * queue, Process * process)
+	{
+		if (process == front)
+		{
+			front = front->next;
+		}
+		if (process == back)
+		{
+			back = back->previous;
+		}
+		if (process->previous != NULL)
+		{
+			process->previous->next = process->next;
+		}
+		if (process->next != NULL)
+		{
+			process->next->previous = process->previous;
+		}
+		queue->size--;
+	}
+};
